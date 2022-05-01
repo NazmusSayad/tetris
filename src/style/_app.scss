@@ -1,0 +1,42 @@
+.box-container {
+  display: grid;
+  grid-template-columns: repeat(12, 30px);
+  outline: 2px solid blueviolet;
+  width: fit-content;
+  aspect-ratio: 2/3;
+  margin: auto;
+  div {
+    aspect-ratio: 1;
+    &.cyan {
+      background: cyan;
+    }
+    &.red {
+      background: red;
+    }
+    &.orange {
+      background: orange;
+    }
+    &.blue {
+      background: blue;
+    }
+    &.green {
+      background: green;
+    }
+    &.yellow {
+      background: yellow;
+    }
+    &.violet {
+      background: violet;
+    }
+    &.cyan,
+    &.red,
+    &.orange,
+    &.blue,
+    &.green,
+    &.yellow,
+    &.violet {
+      border-bottom: 1px solid black;
+      border-right: 1px solid black;
+    }
+  }
+}
