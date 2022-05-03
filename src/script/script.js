@@ -61,7 +61,7 @@ const push_new_dot = (name) => {
   });
 
   if (game_end) {
-    return; // Game end
+    game_end();
   }
 
   {
@@ -389,4 +389,8 @@ const interval_move_down = () => {
     clearInterval(config.interval);
     push_new_dot();
   }
+};
+
+const game_end = () => {
+  location.reload();
 };
