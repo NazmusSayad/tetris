@@ -1,6 +1,6 @@
-const update__row_column = () => {
-  mainElement.box_container.querySelectorAll("div").forEach((element, ind) => {
-    element.className = ""
+const update__row_column = (isStarting = false) => {
+  ;[...mainElement.box_container.children].forEach((element, ind) => {
+    if (isStarting) element.className = ""
 
     // Update row number
     const row = Math.ceil((ind + 1) / config.column_count)
@@ -22,7 +22,7 @@ const game = Object.seal({
     if (!document.hasFocus() || config.isGameRunning) return
 
     config.isGameRunning = true
-    update__row_column()
+    update__row_column(true)
     pushNewDot()
   },
 
@@ -170,15 +170,18 @@ const pushNewDot = () => {
       }
     }
   }
+
   mainElement.current_elements().forEach((element) => {
     // remove old current items
     element.classList.remove("current")
   })
+
   new_elements.forEach((element) => {
     // add dot to new elements & add current class
     element.classList.add(name)
     element.classList.add("current")
   })
+
   config.timeout_interval = setTimeout(moveDown, config.delay)
 }
 
@@ -231,9 +234,7 @@ const moveDot = (param) => {
       element.classList.add(config.current_dotName)
       element.classList.add("current")
     })
-  } else if (param === "down") {
-    return true // to manage push__new__dot()
-  }
+  } else if (param === "down") return true // to manage push__new__dot()
 }
 
 const arrowUp = () => {
@@ -444,10 +445,7 @@ const arrowUp = () => {
       break
   }
 
-  current_elements.forEach((element, ind, arr) => {
-    let row = Number(element.getAttribute("row"))
-    let column = Number(element.getAttribute("column"))
-
+  current_elements.forEach((element, ind) => {
     // new position config for current dot
     let new_data = config.dots[config.current_dotName][dot_position][ind]
     let a = new_data.row + lowest_row
@@ -472,12 +470,12 @@ const arrowUp = () => {
     config.current_dotPosition += 1
 
     // reset olds dot classnames
-    current_elements.forEach((element, ind, arr) => {
+    current_elements.forEach((element) => {
       element.className = ""
     })
 
     // add class names to new dots
-    next_elements.forEach((element, ind, arr) => {
+    next_elements.forEach((element) => {
       element.classList.add(config.current_dotName)
       element.classList.add("current")
     })
