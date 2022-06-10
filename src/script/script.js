@@ -1,5 +1,7 @@
 const update__row_column = () => {
-  mainElement.box_container.querySelectorAll("div").forEach((element, ind, arr) => {
+  mainElement.box_container.querySelectorAll("div").forEach((element, ind) => {
+    element.className = ""
+
     // Update row number
     const row = Math.ceil((ind + 1) / config.column_count)
     element.setAttribute("row", row)
@@ -15,13 +17,75 @@ const get_item = (row, column) => {
   return mainElement.box_container.querySelector(`[row="${row}"][column="${column}"]`)
 }
 
-const push_new_dot = () => {
-  let name = Object.keys(config.dots)[Math.floor(Math.random() * 7)]
+const game = Object.seal({
+  start: function () {
+    if (!document.hasFocus() || config.isGameRunning) return
+
+    config.isGameRunning = true
+    update__row_column()
+    pushNewDot()
+  },
+
+  end: function () {
+    this.pause()
+
+    clearTimeout(config.timeout_interval)
+    clearTimeout(config.timeout)
+  },
+
+  pause: function () {
+    config.timespan_blur = new Date()
+    clearTimeout(config.timeout_interval)
+  },
+
+  resume: function () {
+    if (!config.isGameRunning) return
+
+    config.timeout_interval = setTimeout(() => {
+      moveDown()
+    }, config.timespan_blur - config.timespan)
+    config.timespan = new Date()
+  },
+})
+
+const keyDown = function () {
+  if (!config.isGameRunning) return
+
+  switch (event.key) {
+    case "ArrowLeft":
+      moveDot("left")
+      break
+
+    case "ArrowRight":
+      moveDot("right")
+      break
+
+    case "ArrowDown":
+      // Move down until dot reached bottom
+      while (!moveDot("down"));
+
+      clearTimeout(config.timeout)
+      config.timeout = setTimeout(() => {
+        pushNewDot()
+      }, 200)
+      clearTimeout(config.timeout_interval)
+      break
+
+    case "ArrowUp":
+      arrowUp()
+      break
+  }
+}
+
+const pushNewDot = () => {
+  if (!config.isGameRunning) return
+
+  const name = Object.keys(config.dots)[Math.floor(Math.random() * 7)]
   config.current_dotName = name
   config.current_dotPosition = 0
   const item = config.dots[name][0] // Get current dot cords
+
   let gap
-  let isGameEnd
 
   switch (name) {
     case "cyan":
@@ -54,26 +118,24 @@ const push_new_dot = () => {
 
     default:
       return
-      break
   } // Manage default gap
 
   const new_elements = []
-  item.forEach((element, ind, arr) => {
-    // Get new dot e
+  item.forEach((element) => {
+    // Get new dot element
     const new_item = get_item(element.row, element.column + gap)
     new_elements.push(new_item)
   })
 
-  new_elements.forEach((element, ind, arr) => {
+  new_elements.forEach((element) => {
     if (element.className) {
       // Check if new element already has a dot
-      isGameEnd = false
+      config.isGameRunning = false
     }
   })
 
-  if (isGameEnd) {
-    clearInterval(config.interval)
-    game_end()
+  if (!config.isGameRunning) {
+    return game.end()
   }
 
   {
@@ -81,7 +143,6 @@ const push_new_dot = () => {
       const elements = mainElement.box_container.querySelectorAll(`[row="${i}"]`) // All the elements of a row.
 
       const array = []
-
       elements.forEach((element) => {
         if (element.className) {
           // row element has a dot
@@ -109,27 +170,25 @@ const push_new_dot = () => {
       }
     }
   }
-  mainElement.current_elements().forEach((element, ind, arr) => {
+  mainElement.current_elements().forEach((element) => {
     // remove old current items
     element.classList.remove("current")
   })
-
-  new_elements.forEach((element, ind, arr) => {
+  new_elements.forEach((element) => {
     // add dot to new elements & add current class
     element.classList.add(name)
     element.classList.add("current")
   })
-
-  config.interval = setInterval(interval_move_down, config.delay)
+  config.timeout_interval = setTimeout(moveDown, config.delay)
 }
 
-const move_dot = (param) => {
+const moveDot = (param) => {
   const current_elements = mainElement.current_elements()
   const next_elements = []
-  let perfect = true
+  let isPerfect = true
 
   // get current elements
-  current_elements.forEach((element, ind, arr) => {
+  current_elements.forEach((element) => {
     let row = Number(element.getAttribute("row"))
     let column = Number(element.getAttribute("column"))
 
@@ -153,33 +212,34 @@ const move_dot = (param) => {
     if (next_element) {
       if (next_element.className && !next_element.classList.contains("current")) {
         // check id next element already filled but not with current dot
-        perfect = false
+        isPerfect = false
       }
     } else {
-      perfect = false
+      isPerfect = false
     }
-
     next_elements.push(next_element)
   })
 
-  if (perfect) {
+  if (isPerfect) {
     // remove dot & current class from previous element
-    current_elements.forEach((element, ind, arr) => {
+    current_elements.forEach((element) => {
       element.className = ""
     })
 
     // add classnames to new element
-    next_elements.forEach((element, ind, arr) => {
+    next_elements.forEach((element) => {
       element.classList.add(config.current_dotName)
       element.classList.add("current")
     })
-  } else if (param === "down") return true // to manage push_new_dot()
+  } else if (param === "down") {
+    return true // to manage push__new__dot()
+  }
 }
 
-const arrow_up = () => {
+const arrowUp = () => {
   const current_elements = mainElement.current_elements()
   const next_elements = []
-  let perfect = true
+  let isPerfect = true
 
   // dot angle position
   if (config.current_dotPosition > 2) {
@@ -190,7 +250,7 @@ const arrow_up = () => {
   // Get start row and column
   let lowest_row = []
   let lowest_column = []
-  current_elements.forEach((element, ind, arr) => {
+  current_elements.forEach((element) => {
     let column = Number(element.getAttribute("column"))
     let row = Number(element.getAttribute("row"))
     lowest_row.push(row)
@@ -385,8 +445,8 @@ const arrow_up = () => {
   }
 
   current_elements.forEach((element, ind, arr) => {
-    // let row = Number(element.getAttribute("row"))
-    // let column = Number(element.getAttribute("column"))
+    let row = Number(element.getAttribute("row"))
+    let column = Number(element.getAttribute("column"))
 
     // new position config for current dot
     let new_data = config.dots[config.current_dotName][dot_position][ind]
@@ -400,14 +460,14 @@ const arrow_up = () => {
     if (next_element) {
       if (next_element.className && !next_element.classList.contains("current")) {
         // check id next element already filled but not with current dot
-        perfect = false
+        isPerfect = false
       }
     } else {
-      perfect = false
+      isPerfect = false
     }
   })
 
-  if (perfect) {
+  if (isPerfect) {
     // dot angle position  update
     config.current_dotPosition += 1
 
@@ -424,68 +484,14 @@ const arrow_up = () => {
   }
 }
 
-const interval_move_down = () => {
-  config.timespan = Date.now()
-  config.blur = false
+const moveDown = () => {
+  config.isBlur = false
 
-  if (move_dot("down")) {
+  if (moveDot("down")) {
     // If dot reached bottom
-    clearInterval(config.interval)
-    push_new_dot()
-  }
-}
-
-const game_start = () => {
-  update__row_column()
-
-  push_new_dot()
-
-  document.onkeydown = () => {
-    switch (event.key) {
-      case "ArrowLeft":
-        move_dot("left")
-        break
-      case "ArrowRight":
-        move_dot("right")
-        break
-      case "ArrowDown":
-        // Move down until dot reached bottom
-        while (!move_dot("down")) {}
-        clearTimeout(config.timeout)
-        config.timeout = setTimeout(() => {
-          push_new_dot()
-        }, 200)
-        clearInterval(config.interval)
-        break
-      case "ArrowUp":
-        arrow_up()
-        break
-    }
-  }
-  window.onblur = () => {
-    // stop interval for blur window
-    if (config.blur) return
-
-    console.log("0")
-
-    config.timespan_blur = Date.now()
-    clearInterval(config.interval)
-    config.blur = true
-  }
-  window.onfocus = () => {
-    // Window get focus and start interval again
-    setTimeout(() => {
-      interval_move_down()
-      config.interval = setInterval(interval_move_down, config.delay)
-    }, config.timespan_blur - config.timespan)
-  }
-}
-
-const game_end = () => {
-  document.onkeydown = () => {}
-  window.onblur = () => {}
-  window.onfocus = () => {}
-  if (confirm(`play again?`)) {
-    game_start()
+    pushNewDot()
+  } else {
+    config.timespan = new Date()
+    config.timeout_interval = setTimeout(moveDown, config.delay)
   }
 }
